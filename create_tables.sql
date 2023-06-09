@@ -1,0 +1,102 @@
+CREATE OR REPLACE TABLE team03.customer
+(
+customer_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, first_name VARCHAR(255) NOT NULL
+, last_name VARCHAR(255) NOT NULL
+, email VARCHAR(255) UNIQUE NOT NULL
+, phone_number CHAR(13) UNIQUE NOT NULL
+, address_id INT UNSIGNED NOT NULL
+)ENGINE = InnoDB;
+
+
+CREATE OR REPLACE TABLE team03.employee
+(
+employee_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, first_name VARCHAR(255) NOT NULL
+, last_name VARCHAR(255) NOT NULL
+, email VARCHAR(255) UNIQUE NOT NULL
+, phone_number CHAR(13) UNIQUE NOT NULL
+, address_id INT UNSIGNED NOT NULL
+, employment_date DATE NOT NULL 
+, dismissal_date DATE
+, salary FLOAT
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.address
+(
+address_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, street VARCHAR(255) NOT NULL
+, street_number VARCHAR(10) NOT NULL
+, city VARCHAR(255) NOT NULL
+, postal_code CHAR(6) NOT NULL
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.rental
+(
+rental_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, rental_date DATE NOT NULL
+, return_date_expected DATE NOT NULL
+, return_date_actual DATE
+, customer_id INT UNSIGNED NOT NULL
+, employee_id INT UNSIGNED NOT NULL
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.rental_product_rel 
+(
+relation_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, product_id INT UNSIGNED NOT NULL
+, rental_id INT UNSIGNED NOT NULL
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.product
+(
+product_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, for_rent ENUM('0', '1') NOT NULL
+, for_sale ENUM('0', '1') NOT NULL
+, for_tournament ENUM('0', '1') NOT NULL
+, supply_date DATE NOT NULL
+, game_id INT UNSIGNED NOT NULL
+, purchase_id INT UNSIGNED 
+)ENGINE = InnoDB;
+
+
+CREATE OR REPLACE TABLE team03.game
+(
+game_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, game_title VARCHAR(255) NOT NULL
+, min_players INT
+, max_players INT
+, playing_time FLOAT
+, year_published INT
+, item_type ENUM('standalone', 'expansion')
+, publisher VARCHAR(255)
+, language VARCHAR(255)
+, rental_price FLOAT NOT NULL
+, price FLOAT NOT NULL
+, tournament_game ENUM('0', '1') NOT NULL
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.tournament
+(
+tournament_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, tournament_date DATE NOT NULL
+, ticket_price FLOAT NOT NULL
+, tournament_cost FLOAT NOT NULL
+, game_id INT UNSIGNED NOT NULL 
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.score
+(
+score_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, tournament_id INT UNSIGNED NOT NULL 
+, customer_id INT UNSIGNED NOT NULL 
+, score INT UNSIGNED
+)ENGINE = InnoDB;
+
+CREATE OR REPLACE TABLE team03.purchase
+(
+purchase_id INT UNSIGNED NOT NULL PRIMARY KEY UNIQUE AUTO_INCREMENT
+, customer_id INT UNSIGNED
+, purchase_date DATE NOT NULL
+, employee_id INT UNSIGNED NOT NULL 
+)ENGINE = InnoDB;
