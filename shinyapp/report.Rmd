@@ -1,0 +1,8 @@
+```{r child = 'pracownik_miesiaca.Rmd'}
+```
+
+```{r child = 'turniej_top_10.Rmd'}
+```
+
+```{r child = 'dochody.Rmd'}
+```
