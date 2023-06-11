@@ -1,5 +1,6 @@
 library(shiny)
 library(shinythemes)
+library(shinydashboard)
 library(rmarkdown)
 
 # Workaround for https://github.com/yihui/knitr/issues/1538
@@ -19,17 +20,44 @@ Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/quarto/bin/tools")
 
 
 # Define UI for app that draws a histogram ----
-ui <- fluidPage(
-  theme = shinythemes::shinytheme("superhero"),
-  title = 'Rental Games Shop',
-  sidebarLayout(
-    sidebarPanel(
-      radioButtons('format', 'Document format', c('PDF', 'HTML'),
+# ui <- fluidPage(
+#   theme = shinythemes::shinytheme("superhero"),
+#   title = 'Rental Games Shop',
+#   sidebarLayout(
+#     sidebarPanel(
+#       radioButtons('format', 'Document format', c('PDF', 'HTML'),
+#                    inline = TRUE),
+#       downloadButton('downloadReport')
+#     ),
+#     mainPanel(
+#         tabsetPanel(
+#             tabPanel("Pracownik miesiąca",
+#               withMathJax(),  # include the MathJax library
+#                 selectInput('x', 'Build a regression model of mpg against:',
+#                 choices = names(mtcars)[-1]),
+#               uiOutput('pracownik_miesiaca')
+#             ),
+#             tabPanel("Turniej - top 10 zawodników",
+#               uiOutput('turniej_top_10')
+#             ),
+#             tabPanel("Dochody",
+#               uiOutput('dochody')
+#             )
+#           )
+#     )
+#   )
+# )
+
+
+ui <- dashboardPage(skin='green',
+  dashboardHeader(title = "Rental Games Shop"),
+  dashboardSidebar(
+    radioButtons('format', 'Document format', c('PDF', 'HTML'),
                    inline = TRUE),
       downloadButton('downloadReport')
-    ),
-    mainPanel(
-        tabsetPanel(
+  ),
+  dashboardBody(
+    tabsetPanel(
             tabPanel("Pracownik miesiąca",
               withMathJax(),  # include the MathJax library
                 selectInput('x', 'Build a regression model of mpg against:',
@@ -43,9 +71,9 @@ ui <- fluidPage(
               uiOutput('dochody')
             )
           )
-    )
   )
 )
+
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output) {
