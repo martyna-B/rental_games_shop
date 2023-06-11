@@ -50,7 +50,7 @@ Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/quarto/bin/tools")
 
 
 ui <- dashboardPage(skin='green',
-  dashboardHeader(title = "Rental Games Shop"),
+  dashboardHeader(title = "Gametopia Rentals"),
   dashboardSidebar(
     radioButtons('format', 'Document format', c('PDF', 'HTML'),
                    inline = TRUE),
