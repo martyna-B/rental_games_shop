@@ -1,4 +1,6 @@
 library(shiny)
+library(shinythemes)
+library(rmarkdown)
 
 # Workaround for https://github.com/yihui/knitr/issues/1538
 if (packageVersion("knitr") < "1.17.3") {
@@ -19,7 +21,7 @@ Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/quarto/bin/tools")
 # Define UI for app that draws a histogram ----
 ui <- fluidPage(
   theme = shinythemes::shinytheme("superhero"),
-  title = 'Embed an HTML report from R Markdown/knitr',
+  title = 'Rental Games Shop',
   sidebarLayout(
     sidebarPanel(
       radioButtons('format', 'Document format', c('PDF', 'HTML'),
@@ -105,13 +107,9 @@ server <- function(input, output) {
     content = function(file) {
       src <- normalizePath('report.Rmd')
 
-      # temporarily switch to the temp dir, in case you do not have write
-      # permission to the current working directory
-      owd <- setwd(tempdir())
-      on.exit(setwd(owd))
-      file.copy(src, 'report.Rmd', overwrite = TRUE)
-      library(rmarkdown)
-      out <- render('report.Rmd', switch(
+      file.copy(src, 'report.Rmd', overwrite = FALSE)
+
+      out <- rmarkdown::render('report.Rmd', switch(
         input$format,
         PDF = pdf_document(), HTML = html_document()
       ))
