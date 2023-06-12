@@ -1,1 +1,27 @@
-This file is intentionally left blank.
+Zestawienie najlepszych zawodników w zależności od rozgrywanej gry prezentuje się następująco:
+
+```{r model, collapse=TRUE}
+library(RMariaDB)
+library(tidyverse)
+library(dbplyr)
+
+con_mariadb <- dbConnect(RMariaDB::MariaDB(),
+                dbname = 'team03',
+                username = 'team03',
+                password = "te@m0e",
+                host = "giniewicz.it")
+
+score <- tbl(con_mariadb, "score") %>%
+        show_query() %>%
+        collect()
+
+tournament <- tbl(con_mariadb, "tournament") %>%
+        show_query() %>%
+        collect()
+
+
+full_join(score, tournament, by=c("tournament_id")) %>% 
+    group_by(game_id) %>%
+    slice_max(score, n = 10) %>%
+    select(!c(score_id, tournament_id))
+```
