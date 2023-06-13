@@ -12,6 +12,7 @@ female_names = pd.read_csv("data/female_names.csv")
 male_surnames = pd.read_csv("data/male_surnames.csv")
 female_surnames = pd.read_csv("data/female_surnames.csv")
 addresses = pd.read_excel("data/addresses.xlsx", engine = "openpyxl")
+games = games.rename(columns = {"Rent_price": "Rental_price"}).drop_duplicates("Game_ID")
 
 def rand_email(name, surname):
     return (unidecode(random.choice([name, name[0]])) + "." + unidecode(surname) + random.choice(["", str(np.random.geometric(0.5))]) + random.choice(["@wp.pl", "@gmail.com", "@onet.pl"])).lower()
@@ -99,7 +100,8 @@ def choose_games(games_to_choose, num_of_games):
     not_tournament_id = list(games_sample["Game_ID"])
     tournament_id = list(tournament_games["Game_ID"])
     all_games = not_tournament_id + tournament_id
-    return all_games
+    game_df = games[games["Game_ID"].isin(all_games)].iloc[:, [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]].set_index("Game_ID")
+    return all_games, game_df
 
 def choose_products(games_to_choose_from, num_of_products, first_date):
     """
@@ -154,7 +156,7 @@ def choose_products(games_to_choose_from, num_of_products, first_date):
 
 def product_df_time(product_df, first_date): 
     
-    cust_num = 101 #real customer number is cust_num - 1
+    cust_num = 501 #real customer number is cust_num - 1
     worker_num = 4 #real employee number is worker_num - 1
     
     rental_id = [0]
@@ -339,7 +341,7 @@ def product_df_time(product_df, first_date):
     tournament_df = pd.DataFrame({"Tournament_ID":tournament_id[1:], "Tournament_date":tournament_date, "Ticket_price":ticket_price, "Tournament_cost":tournament_cost, "Game_ID":game_id}).set_index("Tournament_ID")
     score_df = pd.DataFrame({"Score_ID":score_id, "Tournament_ID":tournament_id_score, "Customer_ID":customer_id_score, "Score":score}).set_index("Score_ID")
     product_df["Product_ID"] = range(1, len(product_df.index) + 1)
-    product_df = product_df.set_index("Product_ID")
+    product_df = product_df.dropna(subset = ["For_rent", "For_sale", "For_tournament"]).set_index("Product_ID")
 
     return rental_df, rental_product_rel_df, purchase_df, product_df, tournament_df, score_df
 
@@ -356,13 +358,13 @@ if __name__ == "__main__":
 
     games_number = 50
     initial_products_number = 500
-    customers_number = 100
+    customers_number = 500
     employees_number = 3
     first_date = pd.to_datetime("2022-04-29")
     address_df = generate_addresses(customers_number + employees_number)
     customer_df = generate_customers(customers_number, customers_number + employees_number)
     employee_df = generate_employees(employees_number, customers_number + employees_number, first_date)
-    all_games = choose_games(games, games_number)
+    all_games, game_df = choose_games(games, games_number)
     products_df = choose_products(all_games, initial_products_number, first_date)
     rental_df, rental_product_rel_df, purchase_df, product_df, tournament_df, score_df = product_df_time(products_df, first_date)
 
@@ -383,10 +385,10 @@ if __name__ == "__main__":
     rental_product_rel_df.to_sql("rental_product_rel", engine, if_exists = "append")
 
     conn.execute("TRUNCATE TABLE product")
-    #product_df.to_sql("product", engine, if_exists = "append")
+    product_df.to_sql("product", engine, if_exists = "append")
 
     conn.execute("TRUNCATE TABLE game")
-    #game_df.to_sql("game", engine, if_exists = "append")
+    game_df.to_sql("game", engine, if_exists = "append")
 
     conn.execute("TRUNCATE TABLE tournament")
     tournament_df.to_sql("tournament", engine, if_exists = "append")
