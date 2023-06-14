@@ -2,14 +2,17 @@
 ?? - [ ] Jak długo ludzie lubią grać w gry? Statystyki wypożyczeń w zależności od szacowanej długości trwania gry podanej na pudełku
 ?? - [ ]  Analiza wypożyczeń gier w zależności od maksymalnej liczby osób, w które można grać w daną grę
 ?? - [ ]  Analiza historyczna czy opłaca się wprowadzić zniżkę dla stałych/mieszkających w danej okolicy klientów?
-?? - [ ] Zestawienie miesięczne, w których zarobiliśmy najwięcej na sprzedażach i wypożyczeniach
+?? - [X Kinga ] Zestawienie miesięczne, w których zarobiliśmy najwięcej na sprzedażach i wypożyczeniach
 ?? - [ ] Przychód i dochód firmy - różnice i czy możemy sobie pozwolić żeby dać pracownikom podwyżkę (trzeba uwzględnić wysokość składek aby mieć łączny koszt utrzymania pracowników)
 ?? - [ ]  Przychód i dochód firmy - analiza kiedy moglibyśmy pozwolić sobie na otwarcie nowego oddziału
 ?? - [ ] Jakie gry są najczęściej przetrzymywane
 ?? - [ ]  Którą grę powinniśmy dokupić, bo wypożyczana jest najczęściej
-?? - [ ]  Która gra była najbardziej dochodowa i dochodowość turnieju w zależności od gry - pytanie turniej w jaką grę powinnien być zorganizowany w przyszłości
+?? - [X Kinga]  Która gra była najbardziej dochodowa i dochodowość turnieju w zależności od gry - pytanie turniej w jaką grę powinnien być zorganizowany w przyszłości
 
-
+Pytania od prowadzącego
+1.
+2. Top 10 - Gosia
+3. 
 Szczegóły:
 ticket price nie zależy od ceny turnieju
 score to wynik gracza w danym jednym turnieju (nie suma we wszystkich)
