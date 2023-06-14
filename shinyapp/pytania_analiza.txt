@@ -1,6 +1,6 @@
 
-?? - [ ] Jak długo ludzie lubią grać w gry? Statystyki wypożyczeń w zależności od szacowanej długości trwania gry podanej na pudełku
-?? - [ ]  Analiza wypożyczeń gier w zależności od maksymalnej liczby osób, w które można grać w daną grę
+?? - [X Gosia] Jak długo ludzie lubią grać w gry? Statystyki wypożyczeń w zależności od szacowanej długości trwania gry podanej na pudełku
+?? - [X Gosia]  Analiza wypożyczeń gier w zależności od maksymalnej liczby osób, w które można grać w daną grę
 ?? - [ ]  Analiza historyczna czy opłaca się wprowadzić zniżkę dla stałych/mieszkających w danej okolicy klientów?
 ?? - [X Kinga ] Zestawienie miesięczne, w których zarobiliśmy najwięcej na sprzedażach i wypożyczeniach
 ?? - [ ] Przychód i dochód firmy - różnice i czy możemy sobie pozwolić żeby dać pracownikom podwyżkę (trzeba uwzględnić wysokość składek aby mieć łączny koszt utrzymania pracowników)

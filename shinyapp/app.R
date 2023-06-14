@@ -86,7 +86,7 @@ server <- function(input, output) {
     
     fig <- plot_ly(data, x = ~score, y = ~full_name, text = text,
                    type = 'bar', orientation = 'h', textposition = 'auto',
-                   marker = list(color = "#44bd44"))
+                   marker = list(color = "#18ae54"))
     fig <- fig %>% layout(title = paste0("Top 10 graczy w ", game_id_arg),
                           xaxis = list(title = ""),
                           yaxis = list(title = "", categoryorder = "total ascending"))
