@@ -14,45 +14,11 @@ if (packageVersion("knitr") < "1.17.3") {
   }
 }
 
-# pandoc jest do konwertowania na pdf/html, nie wiem jak to sparametryzować na razie
-# https://stackoverflow.com/questions/28432607/pandoc-version-1-12-3-or-higher-is-required-and-was-not-found-r-shiny/29710643#29710643
-Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/quarto/bin/tools")
-
-
-# Define UI for app that draws a histogram ----
-# ui <- fluidPage(
-#   theme = shinythemes::shinytheme("superhero"),
-#   title = 'Rental Games Shop',
-#   sidebarLayout(
-#     sidebarPanel(
-#       radioButtons('format', 'Document format', c('PDF', 'HTML'),
-#                    inline = TRUE),
-#       downloadButton('downloadReport')
-#     ),
-#     mainPanel(
-#         tabsetPanel(
-#             tabPanel("Pracownik miesiąca",
-#               withMathJax(),  # include the MathJax library
-#                 selectInput('x', 'Build a regression model of mpg against:',
-#                 choices = names(mtcars)[-1]),
-#               uiOutput('pracownik_miesiaca')
-#             ),
-#             tabPanel("Turniej - top 10 zawodników",
-#               uiOutput('turniej_top_10')
-#             ),
-#             tabPanel("Dochody",
-#               uiOutput('dochody')
-#             )
-#           )
-#     )
-#   )
-# )
-
 
 ui <- dashboardPage(skin='green',
   dashboardHeader(title = "Gametopia Rentals"),
   dashboardSidebar(
-    radioButtons('format', 'Document format', c('PDF', 'HTML'),
+    radioButtons('format', 'Document format', c('HTML'),
                    inline = TRUE),
       downloadButton('downloadReport')
   ),
@@ -128,7 +94,7 @@ server <- function(input, output) {
   output$downloadReport <- downloadHandler(
     filename = function() {
       paste('my-report', sep = '.', switch(
-        input$format, PDF = 'pdf', HTML = 'html'
+        input$format, HTML = 'html'
       ))
     },
 
@@ -139,7 +105,7 @@ server <- function(input, output) {
 
       out <- rmarkdown::render('report.Rmd', switch(
         input$format,
-        PDF = pdf_document(), HTML = html_document()
+        HTML = html_document()
       ))
       file.rename(out, file)
     }
