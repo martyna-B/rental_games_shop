@@ -43,11 +43,26 @@ ui <- dashboardPage(skin='green',
                  separator = " - "),
 
               uiOutput('turniej_top_10'),
-              plotlyOutput("plot_top_10_1"),
-              plotlyOutput("plot_top_10_2"),
-              plotlyOutput("plot_top_10_3"),
-              plotlyOutput("plot_top_10_4"),
-              plotlyOutput("plot_top_10_5")
+              plotlyOutput("plot_top_10_1", height = 400, width = 600),
+              plotlyOutput("plot_top_10_2", height = 400, width = 600),
+              plotlyOutput("plot_top_10_3", height = 400, width = 600),
+              plotlyOutput("plot_top_10_4", height = 400, width = 600),
+              plotlyOutput("plot_top_10_5", height = 400, width = 600)
+            ),
+            tabPanel("Dochody",
+              uiOutput('dochody')
+            ),
+            tabPanel("Dochody",
+              uiOutput('dochody')
+            ),
+            tabPanel("Dochody",
+              uiOutput('dochody')
+            ),
+            tabPanel("Dochody",
+              uiOutput('dochody')
+            ),
+            tabPanel("Dochody",
+              uiOutput('dochody')
             ),
             tabPanel("Dochody",
               uiOutput('dochody')
