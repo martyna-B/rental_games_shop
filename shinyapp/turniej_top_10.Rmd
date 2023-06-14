@@ -1,9 +1,11 @@
-Zestawienie najlepszych zawodników w zależności od rozgrywanej gry prezentuje się następująco:
+W sklepie 5 z posiadanych gier rozgrywamy turniejowo.
+Zestawienie najlepszych zawodników w zależności od rozgrywanej gry prezentuje się następująco.
 
-```{r top10, collapse=TRUE}
+```{r top10, collapse=TRUE, echo=F}
 library(RMariaDB)
 library(tidyverse)
 library(dbplyr)
+library(plotly)
 
 con_mariadb <- dbConnect(RMariaDB::MariaDB(),
                 dbname = 'team03',
@@ -12,16 +14,41 @@ con_mariadb <- dbConnect(RMariaDB::MariaDB(),
                 host = "giniewicz.it")
 
 score <- tbl(con_mariadb, "score") %>%
-        show_query() %>%
         collect()
 
 tournament <- tbl(con_mariadb, "tournament") %>%
-        show_query() %>%
+        select(game_id, tournament_id, tournament_date) %>%
+        collect()
+
+customer <- tbl(con_mariadb, "customer") %>%
+        select(first_name, last_name, customer_id) %>%
+        collect()
+
+game <- tbl(con_mariadb, "game") %>%
+        select(game_id, game_title) %>%
         collect()
 
 
-full_join(score, tournament, by=c("tournament_id")) %>% 
+# 10 z najlepszym score dla każdej grupy (zwraca więcej niż 10, bo remisy)
+score_tournament <- left_join(score, tournament, by = c("tournament_id")) %>%
     group_by(game_id) %>%
     slice_max(score, n = 10) %>%
-    select(!c(score_id, tournament_id))
+    select(!c(score_id))
+
+
+### join
+# join z customer by customer_id, żeby wiedzieć kto ma jakiego score
+top_10_customers_in_general <- left_join(score_tournament, customer, by=c("customer_id")) %>%
+        select(!c(customer_id))
+
+# join z game by game_id żeby wiedzieć jaki tytuł miała gra
+
+
+top_10_customers_in_general <- top_10_customers_in_general %>% mutate(full_name = str_c(first_name, " ", last_name))
+top_10_customers_in_general <- top_10_customers_in_general %>% mutate(text_plot = str_c("score: ", score, " - ", tournament_date))
+
+
+### plots
+
 ```
+
