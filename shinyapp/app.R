@@ -49,23 +49,15 @@ ui <- dashboardPage(skin='green',
               plotlyOutput("plot_top_10_4", height = 400, width = 600),
               plotlyOutput("plot_top_10_5", height = 400, width = 600)
             ),
-            tabPanel("Dochody",
-              uiOutput('dochody')
+            tabPanel("Dochody"
             ),
-            tabPanel("Dochody",
-              uiOutput('dochody')
+            tabPanel("Dochody"
             ),
-            tabPanel("Dochody",
-              uiOutput('dochody')
+            tabPanel("Dochody"
             ),
-            tabPanel("Dochody",
-              uiOutput('dochody')
+            tabPanel("Dochody"
             ),
-            tabPanel("Dochody",
-              uiOutput('dochody')
-            ),
-            tabPanel("Dochody",
-              uiOutput('dochody')
+            tabPanel("Dochody"
             )
           )
   )
