@@ -38,15 +38,11 @@ def rand_people(n):
 def rand_phone_numbers(n):
     return ["+48" + random.choice(["5", "6", "7", "8"]) + str(random.randint(10**7, 10**8-1)) for I in range(n)]
 
-def rand_date(start, stop = datetime.now()):
-    deltadays = (stop - start).days
-    return start + random.randint(0, deltadays) * timedelta(days = 1)
-
 def rand_dates_and_salaries(n, first_date):
     result = []
     for i in range(n):
-        empl_date = rand_date(first_date)
-        dism_date = None #random.choice([None, rand_date(start = empl_date)])
+        empl_date = first_date
+        dism_date = None
         salary = None if dism_date else (5500 if datetime.now() - empl_date > timedelta(weeks = 26) else 4500)
         result.append((empl_date, dism_date, salary))
     return result
@@ -100,7 +96,10 @@ def choose_games(games_to_choose, num_of_games):
     not_tournament_id = list(games_sample["Game_ID"])
     tournament_id = list(tournament_games["Game_ID"])
     all_games = not_tournament_id + tournament_id
-    game_df = games[games["Game_ID"].isin(all_games)].iloc[:, [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]].set_index("Game_ID")
+    game_df = games[games["Game_ID"].isin(all_games)].iloc[:, [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
+    game_df["Game_ID"] = np.arange(1, len(game_df) + 1)
+    game_df.set_index("Game_ID", inplace = True)
+    all_games = list(game_df[game_df["Tournament_game"] == 0].index) + list(game_df[game_df["Tournament_game"] == 1].index)
     return all_games, game_df
 
 def choose_products(games_to_choose_from, num_of_products, first_date):
@@ -314,7 +313,7 @@ def product_df_time(product_df, first_date):
                     tournament_id.append(tournament_id[-1] + 1)
                     tournament_date.append(new_date)
                     ticket_price.append(np.random.poisson(18))
-                    game_id.append(np.random.randint(1, 6))
+                    game_id.append(np.random.choice(products_df[products_df["For_tournament"] == 1].loc[:, "Game_ID"].unique()))
                     tournament_cost.append(np.random.poisson(125))
                     
                     num_of_players = np.max([10, np.random.poisson(25)])
