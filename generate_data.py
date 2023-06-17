@@ -253,14 +253,14 @@ def product_df_time(product_df, first_date):
                 num_of_games_to_sale = num_of_games_to_sale[:-1]
 
             games_to_sale = games_salable["Product_ID"].sample(sum(num_of_games_to_sale)) #jakie gry wypożyczono?
-
+            
             k = 0
             i = 0
 
             for purchase in num_of_games_to_sale:
 
                 games_to_this_purchase = np.array(games_to_sale)[k:k+purchase] 
-
+                                      
                 purchase_id.append(purchase_id[-1]+1)
                 purchase_date.append(new_date)
 
@@ -273,7 +273,7 @@ def product_df_time(product_df, first_date):
 
               
                 for game_product in games_to_this_purchase:
-                    product_df.loc[game_product, "Purchase_ID"] = purchase_id[-1]
+                    product_df.iloc[game_product, product_df.columns.get_loc('Purchase_ID')] = purchase_id[-1]
 
                 k += purchase
                 i += 1
