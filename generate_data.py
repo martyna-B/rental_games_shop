@@ -6,12 +6,12 @@ from sqlalchemy import create_engine
 from datetime import timedelta, datetime
 from unidecode import unidecode
 
-games = pd.read_csv("data/games_to_choose.csv") 
-male_names = pd.read_csv("data/male_names.csv")
-female_names = pd.read_csv("data/female_names.csv")
-male_surnames = pd.read_csv("data/male_surnames.csv")
-female_surnames = pd.read_csv("data/female_surnames.csv")
-addresses = pd.read_excel("data/addresses.xlsx", engine = "openpyxl")
+games = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/games_to_choose.csv") 
+male_names = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/male_names.csv")
+female_names = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/female_names.csv")
+male_surnames = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/male_surnames.csv")
+female_surnames = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/female_surnames.csv")
+addresses = pd.read_excel("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/addresses.xlsx", engine = "openpyxl")
 games = games.rename(columns = {"Rent_price": "Rental_price"}).drop_duplicates("Game_ID")
 
 def rand_email(name, surname):
@@ -273,7 +273,12 @@ def product_df_time(product_df, first_date):
 
               
                 for game_product in games_to_this_purchase:
-                    product_df.iloc[game_product, product_df.columns.get_loc('Purchase_ID')] = purchase_id[-1]
+                    print("Prod len: " + str(len(product_df)))
+                    print("Games salable: " + str(len(games_salable)))
+                    print("Games salable ind: " + str(games_salable["Product_ID"]))
+                    print("Games to this purchase: " + str(games_to_this_purchase))
+                    print(game_product)
+                    product_df.iloc[game_product-1, product_df.columns.get_loc('Purchase_ID')] = purchase_id[-1]
 
                 k += purchase
                 i += 1
@@ -294,16 +299,10 @@ def product_df_time(product_df, first_date):
             new_df["For_rent"] = pd.to_numeric(new_df["For_rent"], downcast='integer')
             new_df["For_sale"] = pd.to_numeric(new_df["For_sale"], downcast='integer')
 
-            product_df = pd.concat([product_df, new_df], ignore_index=True)  
-            
-            
+            product_df = pd.concat([product_df, new_df], ignore_index=True)             
 
         j += 1
-            
-            
-
-    
-    
+             
     rental_df = pd.DataFrame({"Rental_ID":rental_id[1:], "Rental_date":rental_date, "Return_date_expected":return_date_expected, "Return_date_actual":return_date_actual, "Customer_ID":customer_rent_id, "Employee_ID":worker_rent_id}).set_index("Rental_ID")
     rental_product_rel_df = pd.DataFrame({"Relation_ID":relation_id[1:], "Product_ID":product_id_rel, "Rental_ID":rental_id_rel}).set_index("Relation_ID")
     purchase_df = pd.DataFrame({"Purchase_ID":purchase_id[1:], "Purchase_date":purchase_date, "Customer_ID":customer_purch_id, "Employee_ID":worker_purch_id}).set_index("Purchase_ID")
