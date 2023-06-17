@@ -176,16 +176,6 @@ def product_df_time(product_df, first_date):
     customer_purch_id = []
     worker_purch_id = []  
     
-    tournament_id = [0]
-    tournament_date = []
-    ticket_price = []
-    game_id = []
-    tournament_cost = []
-    
-    tournament_id_score = []
-    customer_id_score = []
-    score = []
-    
     num_to_rent = np.random.poisson(10, 365)
     num_to_sale = np.random.poisson(10, 365)
     
@@ -306,16 +296,48 @@ def product_df_time(product_df, first_date):
 
             product_df = pd.concat([product_df, new_df], ignore_index=True)  
             
-            #turnieje gier
             
-            if days_count % 7 == 1 or days_count % 7 == 0:
-                if np.random.random() < 0.3:
-                    tournament_id.append(tournament_id[-1] + 1)
-                    tournament_date.append(new_date)
-                    ticket_price.append(np.random.poisson(18))
-                    game_id.append(np.random.choice(products_df[products_df["For_tournament"] == 1].loc[:, "Game_ID"].unique()))
-                    tournament_cost.append(np.random.poisson(125))
+
+        j += 1
+            
+            
+
+    
+    
+    rental_df = pd.DataFrame({"Rental_ID":rental_id[1:], "Rental_date":rental_date, "Return_date_expected":return_date_expected, "Return_date_actual":return_date_actual, "Customer_ID":customer_rent_id, "Employee_ID":worker_rent_id}).set_index("Rental_ID")
+    rental_product_rel_df = pd.DataFrame({"Relation_ID":relation_id[1:], "Product_ID":product_id_rel, "Rental_ID":rental_id_rel}).set_index("Relation_ID")
+    purchase_df = pd.DataFrame({"Purchase_ID":purchase_id[1:], "Purchase_date":purchase_date, "Customer_ID":customer_purch_id, "Employee_ID":worker_purch_id}).set_index("Purchase_ID")
+    product_df["Product_ID"] = range(1, len(product_df.index) + 1)
+    product_df = product_df.dropna(subset = ["For_rent", "For_sale", "For_tournament"]).set_index("Product_ID")
+
+    return rental_df, rental_product_rel_df, purchase_df, product_df
+
+def create_tournament_and_score_df(first_date):
+    tournament_id = [0]
+    tournament_date = []
+    ticket_price = []
+    game_id = []
+    tournament_cost = []
+    
+    cust_num = 501 #real customer number is cust_num - 1
+    
+    tournament_id_score = []
+    customer_id_score = []
+    score = []
+    
+    for days_count in np.arange(1, 500):
+        if days_count % 7 == 1 or days_count % 7 == 0:
+            
+            new_date = first_date + timedelta(days = int(days_count))
+            
+            if np.random.random() < 0.3:
+                tournament_id.append(tournament_id[-1] + 1)
+                tournament_date.append(new_date)
+                ticket_price.append(np.random.poisson(18))
+                game_id.append(np.random.choice(products_df[products_df["For_tournament"] == 1].loc[:, "Game_ID"].unique()))
+                tournament_cost.append(ticket_price[-1]*np.random.poisson(10))
                     
+                if days_count < 366:
                     num_of_players = np.max([10, np.random.poisson(25)])
                     
                     while num_of_players >= cust_num - 1:
@@ -326,23 +348,14 @@ def product_df_time(product_df, first_date):
                         customer_id_score = customer_id_score + list(np.random.choice(np.arange(cust_num), num_of_players, replace=False))
                         score = score + list(np.arange(num_of_players))
                         tournament_id_score = tournament_id_score + [tournament_id[-1] for _ in np.arange(num_of_players)]
+                        
+            
                     
-
-        j += 1
-            
-            
-
     score_id = np.arange(1, len(score) + 1)
-    
-    rental_df = pd.DataFrame({"Rental_ID":rental_id[1:], "Rental_date":rental_date, "Return_date_expected":return_date_expected, "Return_date_actual":return_date_actual, "Customer_ID":customer_rent_id, "Employee_ID":worker_rent_id}).set_index("Rental_ID")
-    rental_product_rel_df = pd.DataFrame({"Relation_ID":relation_id[1:], "Product_ID":product_id_rel, "Rental_ID":rental_id_rel}).set_index("Relation_ID")
-    purchase_df = pd.DataFrame({"Purchase_ID":purchase_id[1:], "Purchase_date":purchase_date, "Customer_ID":customer_purch_id, "Employee_ID":worker_purch_id}).set_index("Purchase_ID")
     tournament_df = pd.DataFrame({"Tournament_ID":tournament_id[1:], "Tournament_date":tournament_date, "Ticket_price":ticket_price, "Tournament_cost":tournament_cost, "Game_ID":game_id}).set_index("Tournament_ID")
     score_df = pd.DataFrame({"Score_ID":score_id, "Tournament_ID":tournament_id_score, "Customer_ID":customer_id_score, "Score":score}).set_index("Score_ID")
-    product_df["Product_ID"] = range(1, len(product_df.index) + 1)
-    product_df = product_df.dropna(subset = ["For_rent", "For_sale", "For_tournament"]).set_index("Product_ID")
-
-    return rental_df, rental_product_rel_df, purchase_df, product_df, tournament_df, score_df
+    
+    return tournament_df, score_df
 
 
 if __name__ == "__main__":
@@ -365,8 +378,8 @@ if __name__ == "__main__":
     employee_df = generate_employees(employees_number, customers_number + employees_number, first_date)
     all_games, game_df = choose_games(games, games_number)
     products_df = choose_products(all_games, initial_products_number, first_date)
-    rental_df, rental_product_rel_df, purchase_df, product_df, tournament_df, score_df = product_df_time(products_df, first_date)
-
+    rental_df, rental_product_rel_df, purchase_df, product_df = product_df_time(products_df, first_date)
+    tournament_df, score_df = create_tournament_and_score_df(first_date)
 
     conn.execute("TRUNCATE TABLE customer")
     customer_df.to_sql("customer", engine, if_exists = "append")
