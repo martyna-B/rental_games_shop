@@ -190,7 +190,7 @@ def product_df_time(product_df, first_date):
 
             games_rentable = product_df[product_df["For_rent"] == 1]
 
-            num_of_games_to_rent = np.random.poisson(1/1.3, num_to_rent[j]) #ile gier na wypożyczenie?
+            num_of_games_to_rent = np.random.geometric(1/1.3, num_to_rent[j]) #ile gier na wypożyczenie?
 
             while sum(num_of_games_to_rent) > len(games_rentable): 
                 num_of_games_to_rent = num_of_games_to_rent[:-1]
@@ -273,11 +273,6 @@ def product_df_time(product_df, first_date):
 
               
                 for game_product in games_to_this_purchase:
-                    print("Prod len: " + str(len(product_df)))
-                    print("Games salable: " + str(len(games_salable)))
-                    print("Games salable ind: " + str(games_salable["Product_ID"]))
-                    print("Games to this purchase: " + str(games_to_this_purchase))
-                    print(game_product)
                     product_df.iloc[game_product-1, product_df.columns.get_loc('Purchase_ID')] = purchase_id[-1]
 
                 k += purchase
