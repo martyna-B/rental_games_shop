@@ -6,12 +6,12 @@ from sqlalchemy import create_engine
 from datetime import timedelta, datetime
 from unidecode import unidecode
 
-games = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/games_to_choose.csv") 
-male_names = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/male_names.csv")
-female_names = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/female_names.csv")
-male_surnames = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/male_surnames.csv")
-female_surnames = pd.read_csv("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/female_surnames.csv")
-addresses = pd.read_excel("C:/Users/Martyna/Studia/Bazy danych/Projekt/data/addresses.xlsx", engine = "openpyxl")
+games = pd.read_csv("data/games_to_choose.csv") 
+male_names = pd.read_csv("data/male_names.csv")
+female_names = pd.read_csv("data/female_names.csv")
+male_surnames = pd.read_csv("data/male_surnames.csv")
+female_surnames = pd.read_csv("data/female_surnames.csv")
+addresses = pd.read_excel("data/addresses.xlsx", engine = "openpyxl")
 games = games.rename(columns = {"Rent_price": "Rental_price"}).drop_duplicates("Game_ID")
 
 def rand_email(name, surname):
