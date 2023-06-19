@@ -1,0 +1,2 @@
+Rscript -e "rmarkdown::render('report_Rmd/report.Rmd', output_format = 'html_document')"
+start report_Rmd/report.html
