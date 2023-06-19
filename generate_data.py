@@ -68,7 +68,8 @@ def generate_employees(n, addresses_number, first_date):
 
 def generate_addresses(n):
     idx = random.sample(range(len(addresses)), n)
-    df = addresses.iloc[idx, [2, 3, 4]].rename(columns = {"ULICA_NAZWA": "Street", "NUMER_ADR": "Street_number", "KOD_POCZTOWY": "Postal_code"})
+    df = addresses.iloc[idx, [2, 3, 4]]
+    df = df.rename(columns = {"ULICA_NAZWA": "Street", "NUMER_ADR": "Street_number", "KOD_POCZTOWY": "Postal_code"})
     df.insert(0, "Address_ID", range(1, n+1))
     df.insert(3, "City", "Wrocław")
     df = df.set_index("Address_ID")
