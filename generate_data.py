@@ -47,13 +47,6 @@ def rand_dates_and_salaries(n, first_date):
         result.append((empl_date, dism_date, salary))
     return result
 
-def rand_address():
-    global addresses
-    x = random.randint(0, len(addresses))
-    address = addresses.loc[x, ["ULICA_NAZWA", "NUMER_ADR", "KOD_POCZTOWY"]]
-    addresses = addresses.drop(x).reset_index(drop = True)
-    return address[0][4:], address[1], "Wrocław", address[2]
-
 def generate_customers(n, addresses_number):
     df = pd.DataFrame()
     df["Customer_ID"] = range(1, n+1)
@@ -74,9 +67,10 @@ def generate_employees(n, addresses_number, first_date):
     return df
 
 def generate_addresses(n):
-    df = pd.DataFrame()
-    df["Address_ID"] = range(1, n+1)
-    df[["Street", "Street_number", "City", "Postal_code"]] = [rand_address() for _ in range(n)]
+    idx = random.sample(range(len(addresses)), n)
+    df = addresses.iloc[idx, [2, 3, 4]].rename(columns = {"ULICA_NAZWA": "Street", "NUMER_ADR": "Street_number", "KOD_POCZTOWY": "Postal_code"})
+    df.insert(0, "Address_ID", range(1, n+1))
+    df.insert(3, "City", "Wrocław")
     df = df.set_index("Address_ID")
     return df
 
