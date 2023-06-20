@@ -147,7 +147,7 @@ employee_plot <- plot_ly(data = best_employee, x = ~index, y = ~total_games, typ
 employee_plot <- layout(employee_plot, xaxis = list(tickvals = ~index, ticktext = ~as.character(best_employee$date), tickangle = 90, title = "Data"), yaxis = list(title = "Ilość gier"), title = "Ilość gier sprzedanych i wypożyczonych przez\nnajlepszych pracowników w każdym miesiącu")
 employee_plot
 ```
-Najczęściej pracownikiem miesiąca zostaje `r as.factor(names(table(best_employee$full_name))[which.max(table(best_employee$full_name))])`. Ten tytuł otrzymał `r as.factor(max(table(best_employee$full_name)))` razy. 
+Najczęściej pracownikiem miesiąca zostaje `r as.factor(names(table(best_employee$full_name))[which.max(table(best_employee$full_name))])`. Ten tytuł uzyskany został `r as.factor(max(table(best_employee$full_name)))` razy. 
 
 ***
 
