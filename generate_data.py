@@ -11,7 +11,9 @@ male_names = pd.read_csv("data/male_names.csv")
 female_names = pd.read_csv("data/female_names.csv")
 male_surnames = pd.read_csv("data/male_surnames.csv")
 female_surnames = pd.read_csv("data/female_surnames.csv")
-addresses = pd.read_excel("data/addresses.xlsx", engine = "openpyxl")
+addresses = pd.read_csv("data/addresses.csv")
+
+
 games = games.rename(columns = {"Rent_price": "Rental_price"}).drop_duplicates("Game_ID")
 
 def rand_email(name, surname):
@@ -40,15 +42,6 @@ def rand_people(n):
 def rand_phone_numbers(n):
     return ["+48" + random.choice(["5", "6", "7", "8"]) + str(random.randint(10**7, 10**8-1)) for I in range(n)]
 
-def rand_dates_and_salaries(n, first_date):
-    result = []
-    for i in range(n):
-        empl_date = first_date
-        dism_date = None
-        salary = None if dism_date else (5500 if datetime.now() - empl_date > timedelta(weeks = 26) else 4500)
-        result.append((empl_date, dism_date, salary))
-    return result
-
 def generate_customers(n, addresses_number):
     df = pd.DataFrame()
     df["Customer_ID"] = range(1, n+1)
@@ -57,6 +50,15 @@ def generate_customers(n, addresses_number):
     df["Address_ID"] = random.sample(range(1, addresses_number + 1), n)
     df = df.set_index("Customer_ID")
     return df
+
+def rand_dates_and_salaries(n, first_date):
+    result = []
+    for i in range(n):
+        empl_date = first_date
+        dism_date = None
+        salary = None if dism_date else (5500 if datetime.now() - empl_date > timedelta(weeks = 26) else 4500)
+        result.append((empl_date, dism_date, salary))
+    return result
 
 def generate_employees(n, addresses_number, first_date):
     df = pd.DataFrame()
@@ -350,6 +352,8 @@ def create_tournament_and_score_df(first_date):
 
 
 if __name__ == "__main__":
+
+
     engine = create_engine("mysql+pymysql://{user}:{password}@{account}:3306/team03".format(
         user = "team03",
         password = parse.quote("te@m0e"),
