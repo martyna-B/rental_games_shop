@@ -566,7 +566,7 @@ for (i in 1:length(who_often_not_on_time[[1]])){
 who_often_not_on_time <- who_often_not_on_time %>% mutate(mean_delay = mean_delay)
 
 mean_client_delay <- plot_ly(data = who_often_not_on_time, x = ~full_name, y = ~mean_delay, type = 'bar',color = ~full_name, colors = "Paired")
-mean_client_delay <- layout(mean_client_delay, xaxis = list(tickangle = 90, title="Imię i nazwisko", tickvals = "", ticktext = ""), yaxis = list(title = "Średnia liczba dni spóźnienia"), title = "Średnia czas przetrzymywania gier w 2022 roku w dniach")
+mean_client_delay <- layout(mean_client_delay, xaxis = list(tickangle = 90, title="Imię i nazwisko", tickvals = "", ticktext = ""), yaxis = list(title = "Średnia liczba dni spóźnienia"), title = "Średni czas przetrzymywania gier w 2022 roku w dniach")
 
 mean_client_delay
 

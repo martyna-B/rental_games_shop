@@ -7,7 +7,7 @@ output:
     number_section: true
     toc: true
     toc_depth: 2
-    toc_float: true #-- taki latajacy spis tresci, czekam na opinie
+    toc_float: true
 ---
 
 ```{r, echo=F, include=F}
@@ -21,6 +21,41 @@ con_mariadb <- dbConnect(RMariaDB::MariaDB(),
                 username = 'team03',
                 password = "te@m0e",
                 host = "giniewicz.it")
+
+score <- tbl(con_mariadb, "score") %>%
+  collect()
+
+tournament <- tbl(con_mariadb, "tournament") %>%
+  collect()
+
+customer <- tbl(con_mariadb, "customer") %>%
+  collect()
+
+game <- tbl(con_mariadb, "game") %>%
+  collect()
+
+employee <- tbl(con_mariadb, "employee") %>%
+  collect()
+
+purchase <- tbl(con_mariadb, "purchase") %>%
+  collect()
+
+rental <- tbl(con_mariadb, "rental") %>%
+  collect()
+
+product <- tbl(con_mariadb, "product") %>% 
+  collect()
+
+relation <- tbl(con_mariadb, "rental_product_rel") %>% 
+  collect()
+
+address <- tbl(con_mariadb, "address") %>% 
+  collect()
+
+
+customer <- customer %>% 
+  mutate(full_name = str_c(first_name, " ", last_name)) %>% select(!c(first_name, last_name, email, phone_number))
+
 ```
 
 
@@ -350,3 +385,195 @@ penalty_monthly <- penalty_monthly %>% layout(xaxis = list(tickvals = ~index, ti
 penalty_monthly
 ```
 Klienci, którzy nie oddadzą wypożyczonej planszówki w terminie muszą liczyć się z dodatkowymi kosztami. Przetrzymywanie gry o każdy dzień skutkuje koniecznością dopłaty 50% ceny wypożyczenia. Największa kwota, która została uzyskana przez przetrzymywanie gier przez klientów została wygenerowana `r month_info[which(month_info$penalty == max(month_info$penalty)), ]$month`.`r month_info[which(month_info$penalty == max(month_info$penalty)), ]$year` i wyniosła `r as.factor(month_info[which(month_info$penalty == max(month_info$penalty)), ]$penalty)`.
+
+***
+# Top 10 zawodników turniejowych
+
+W sklepie każdy turniej rozgrywany jest w daną konkretną grę. Analiza top 10 zawodników turniejowych polega na ukazaniu najlepszych zawodników w zależności od gry, natomiast bez uwzględniania daty turnieju. Na wykresach przedstawione są najwyższe wyniki uzyskane przez graczy w każdą z 5 gier rozgrywanych na turniejach wraz z datą uzyskania danego wyniku.
+
+```{r, collapse=TRUE, echo=F}
+########################## Top 10 zawodników w zależności od gry ########################## 
+
+# 10 z najlepszym score dla każdej gry
+score_tournament <- left_join(score, tournament, by = c("tournament_id")) %>%
+    group_by(game_id) %>%
+    slice_max(score, n = 10) %>%
+    select(!c(score_id))
+```
+
+```{r, collapse=TRUE, echo=F}
+
+### join
+# join z customer by customer_id, żeby wiedzieć kto ma jakiego score
+top_10_customers_in_general <- left_join(score_tournament, customer, by=c("customer_id"))
+
+# join z game by game_id żeby wiedzieć jaki tytuł miała gra
+top_10_general_games <- left_join(top_10_customers_in_general, game, by=c("game_id"))
+top_10_general_games <- top_10_general_games %>% mutate(text_plot = str_c("score: ", score, " - ", tournament_date))
+
+```
+
+```{r, collapse=TRUE, echo=F}
+# get game_id in tournament games
+tournament_game_id <- game %>% filter(tournament_game == 1) %>% group_by(game_id) %>% select(game_id) %>% unlist() %>% as.vector()
+```
+
+```{r, collapse=TRUE, echo=F}
+generate_plots <- function(game_id_arg) {
+  
+    grouped_full_name <- top_10_general_games %>% 
+      filter(game_id == game_id_arg) %>% 
+      group_by(full_name) %>% 
+      summarise(score = max(score), .groups = 'drop') %>% 
+      arrange(desc(score))
+    
+    data <- inner_join(grouped_full_name, top_10_general_games, by=c('full_name', 'score'))
+      
+    text <- data$text_plot
+    
+    fig <- plot_ly(data, x = ~score, y = ~full_name, text = text,
+                   type = 'bar', orientation = 'h', textposition = 'auto',
+                   marker = list(color = "#18ae54"))
+    
+    fig <- fig %>% layout(title = paste0("Top 10 graczy w ", data$game_title[1]),
+                      xaxis = list(title = "score"),
+                      yaxis = list(title = "Imię i nazwisko", categoryorder = "total ascending"))
+    
+    fig
+  }
+
+```
+
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+generate_plots(tournament_game_id[1])
+
+```
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+generate_plots(tournament_game_id[2])
+
+```
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+generate_plots(tournament_game_id[3])
+
+```
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+generate_plots(tournament_game_id[4])
+
+```
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+generate_plots(tournament_game_id[5])
+
+```
+
+
+
+***
+# Wypożyczenia, a szacowana długość trwania gry
+
+Poniższa analiza ma na celu dostarczenia odpowiedzi jakie gry są wypożyczane najchętniej, w zależności od szacowanej długości trwania rozgrywki podanej na pudełku. Gry zostały odpowiednio podzielone na te trwające mniej niż 30 minut, 31-60 minut, 61-90 minut, 91-120 minut i te, których rozgrywka trwa szacunkowo ponad 120 minut.
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+game_product <- left_join(game, product, by=c('game_id'))
+game_product_rental_relation <- left_join(game_product, relation, by=c('product_id'))
+game_product_relation <- left_join(game_product_rental_relation, rental, by=c('rental_id'))
+
+# create year and month column to group_by
+game_playtime <- game_product_relation %>% 
+  filter(!is.na(rental_date)) %>%
+  mutate(
+  year = rental_date %>% format(format="%Y"),
+  month = rental_date %>% format(format="%m")
+)
+
+game_playtime$category <- cut(game_playtime$playing_time, breaks = c(1, 30, 60, 90, 120, Inf))
+```
+
+
+```{r, echo = F}
+game_playtime_groups <- game_playtime %>% group_by(category) %>% summarise(n = n(), .groups = 'drop')
+
+rental_playtime_2022 <- plot_ly(data = game_playtime_groups, x = ~category, y = ~n, type = 'bar',color = ~category, colors = "Paired")
+rental_playtime_2022 <- layout(rental_playtime_2022, xaxis = list(tickangle = 90, title="Szacowana długość trwania gry", tickvals = "", ticktext = ""), yaxis = list(title = "Liczba wypożyczeń"), title = "Statystyki wypożyczeń w zależności od szacowanej długości trwania gry")
+rental_playtime_2022
+```
+Widzimy, że klienci najchętniej wypożyczają gry, których czas trwania rozgrywki mieści się w przedziale `r game_playtime_groups[which(game_playtime_groups$n == max(game_playtime_groups$n)), ]$category` minut.
+
+***
+# Przetrzymania
+
+Analiza dotyczy wypożyczeń, kiedy gry były zwracane do sklepu po terminie. Rozpatruje się przypadki z 2022 roku.
+
+## Które gry w 2022 roku były najczęściej przetrzymywane?
+
+Wykres pokazuje 10 najczęściej przetrzymywanych gier w 2022 roku.
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+return_not_on_time <- game_playtime %>% filter(return_date_actual>return_date_expected)
+
+# w ostatnim roku
+which_games_not_on_time_year <- return_not_on_time %>%
+  group_by(year, game_title) %>%
+  summarise(n=n(), .groups = 'drop') %>%
+  filter(year==2022) %>% 
+  arrange(desc(n)) %>% 
+  top_n(10, game_title)
+
+
+games_not_on_time <- plot_ly(data = which_games_not_on_time_year, x = ~game_title, y = ~n, type = 'bar',color = ~game_title, colors = "Paired")
+games_not_on_time <- layout(games_not_on_time, xaxis = list(tickangle = 90, title="Tytuł gry", tickvals = "", ticktext = ""), yaxis = list(title = "Liczba przetrzymań"), title = "Najczęstsze przypadki przetrzymania danej gry w 2022 roku.")
+
+games_not_on_time
+
+```
+Najczęściej przetrzymywaną grą w 2022 roku była gra `r which_games_not_on_time_year[which(which_games_not_on_time_year$n == max(which_games_not_on_time_year$n)), ]$game_title`. Została ona przetrzymana `r which_games_not_on_time_year[which(which_games_not_on_time_year$n == max(which_games_not_on_time_year$n)), ]$n` razy.
+
+## Którzy klienci przetrzymywali najwięcej gier w 2022 roku? 
+To pytanie ma na celu uzyskanie informacji, czy wśród zarejestrowanych klientów mamy osoby notorycznie spóźniające się z oddaniem towaru.
+
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+who_return_not_on_time <- left_join(return_not_on_time, customer, by=c('customer_id')) %>% 
+  mutate(return_difference = difftime(return_date_actual, return_date_expected, unit="days"))
+
+who_often_not_on_time <- who_return_not_on_time %>% 
+  group_by(year, full_name) %>% 
+  summarise(n=n(), .groups = 'drop') %>% 
+  filter(year==2022) %>% 
+  arrange(desc(n)) %>% 
+  top_n(10, n)
+
+client_delay <- plot_ly(data = who_often_not_on_time, x = ~full_name, y = ~n, type = 'bar',color = ~full_name, colors = "Paired")
+client_delay <- layout(client_delay, xaxis = list(tickangle = 90, title="Imię i nazwisko", tickvals = "", ticktext = ""), yaxis = list(title = "Liczba przetrzymań"), title = "Najczęściej przetrzymujący gry klienci w 2022 roku.")
+
+client_delay
+
+```
+
+Osobą, która w 2022r. dokonała największej liczby przetrzymań był/a `r who_often_not_on_time[which(who_often_not_on_time$n == max(who_often_not_on_time$n)), ]$full_name`. Przetrzymała ona swoje wypożyczenia  `r who_often_not_on_time[which(who_often_not_on_time$n == max(who_often_not_on_time$n)), ]$n %>% head(1)` razy.
+
+## Wsród najczęściej przetrzymujących klientów, średnio o ile dni spóźniali się oni z oddaniem?
+
+Odpowiedź na to pytanie pokazuje średni okres czasu, po którym klienci, którym najczęściej zdarza się nie oddać gry w terminie zwracają grę do naszego sklepu. Ma na celu sprawdzenie zależności czy osoba częściej przetrzymująca gry, przetrzymuje je dłużej niż osoba rzadziej przetrzymująca.
+
+```{r, collapse=TRUE, echo=F, warning=FALSE}
+mean_delay <- c()
+for (i in 1:length(who_often_not_on_time[[1]])){
+  personal_delay <- who_return_not_on_time %>% filter(full_name==who_often_not_on_time$full_name[i]) %>% select(game_title, return_difference)
+  mean_delay <- append(mean_delay, mean(personal_delay$return_difference))
+}
+
+who_often_not_on_time <- who_often_not_on_time %>% mutate(mean_delay = mean_delay)
+
+mean_client_delay <- plot_ly(data = who_often_not_on_time, x = ~full_name, y = ~mean_delay, type = 'bar',color = ~full_name, colors = "Paired")
+mean_client_delay <- layout(mean_client_delay, xaxis = list(tickangle = 90, title="Imię i nazwisko", tickvals = "", ticktext = ""), yaxis = list(title = "Średnia liczba dni spóźnienia"), title = "Średni czas przetrzymywania gier w 2022 roku w dniach")
+
+mean_client_delay
+
+```
+`r who_often_not_on_time[which(who_often_not_on_time$n == max(who_often_not_on_time$n)), ]$full_name` przetrzymywał/a swoje wypożyczenia przez średnio `r who_often_not_on_time[which(who_often_not_on_time$n == max(who_often_not_on_time$n)), ]$mean_delay` dni.
+
