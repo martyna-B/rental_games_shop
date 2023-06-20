@@ -1,0 +1,352 @@
+---
+title: "Raport"
+author: 'Martyna Bielec, Małgorzata Jakubik, Klaudia Jaworek, Kinga Jesionek'
+date: '2023-06-21'
+output: 
+  html_document:
+    number_section: true
+    toc: true
+    toc_depth: 2
+    toc_float: true #-- taki latajacy spis tresci, czekam na opinie
+---
+
+```{r, echo=F, include=F}
+library(RMariaDB)
+library(tidyverse)
+library(dbplyr)
+library(plotly)
+library(rmarkdown)
+con_mariadb <- dbConnect(RMariaDB::MariaDB(),
+                dbname = 'team03',
+                username = 'team03',
+                password = "te@m0e",
+                host = "giniewicz.it")
+```
+
+
+***
+# Dochodowość turniejów
+
+## Które turnieje były najbardziej dochodowe dla firmy? 
+
+Dochód to różnica między osiągniętymi przychodami a poniesionymi kosztami. 
+
+Organizowanie każdego turnieju wiąże się z kosztami, które musi ponieść organizator. W tabeli *tournament* znajduje się kolumna *tournament_cost*, która zawiera informację o opłatach jakie musi ponieść firma, aby móc zorganizawać daną rozgrywkę. Zawrte tam wartości przeznaczone są na nagrody dla zwycięzców. Przychodem natomiast jest kwota jaką uzyska firma podczas sprzedaży biletów wstępu.
+
+```{r, echo = F}
+tournament_info = 'SELECT game_id, game_title,  MAX(score+1) AS "players_num", tournament_date, ticket_price, tournament_cost
+FROM tournament
+LEFT JOIN score USING (tournament_id)
+LEFT JOIN game USING (game_id)
+WHERE tournament_date < "2023-04-30"
+GROUP BY tournament_id
+ORDER BY players_num DESC;
+'
+tournament_df <- dbGetQuery(con_mariadb, tournament_info)
+
+tournament_income <- tournament_df %>% 
+  mutate(sold_tickets = players_num*ticket_price, income = sold_tickets - tournament_cost) %>%
+  select(game_title, income, sold_tickets, tournament_cost, tournament_date) %>%
+  arrange(desc(income))
+tournament_income$tournament_date <- as.factor(tournament_income$tournament_date)
+tournament_income$game_title <- as.factor(tournament_income$game_title)
+```
+
+```{r blabla, echo=F}
+#ggplot(tournament_income, aes(x=as.factor(tournament_date), y=as.factor(income))) + geom_col(aes(fill = game_title)) 
+income_plot <- plot_ly(data = tournament_income, x = ~tournament_date, y = ~income, type = 'bar', color = ~game_title, customdata = ~tournament_cost, hovertemplate = paste("Termin: %{x}:<br>Przychód: ", tournament_income$sold_tickets, "<br>Dochód: %{y}<br> Koszt turnieju: %{customdata}"))
+income_plot <- layout(income_plot, xaxis = list(tickangle = 90, title="Termin turnieju"), yaxis = list(range = c(min(tournament_income$income)-10, max(tournament_income$income)+10), title = "Dochód z turnieju"), title = "Dochód z każdego organizowanego turnieju")
+income_plot
+```
+
+Na podstawie powyższego wykresu widać, że to turniej, który odbył się `r tournament_income[which(tournament_income$income == max(tournament_income$income)), ]$tournament_date`, w `r tournament_income[which(tournament_income$income == max(tournament_income$income)), ]$game_title` wygenerował największy dochód, który wyniósł `r as.factor(tournament_income[which(tournament_income$income == max(tournament_income$income)), ]$income)`. Natomiast najmnmiejszym zainteresowaniem cieszył się turniej w `r tournament_income[which(tournament_income$income == min(tournament_income$income)), ]$game_title`, który odbył się `r tournament_income[which(tournament_income$income == min(tournament_income$income)), ]$tournament_date` i wygenerował `r as.factor(tournament_income[which(tournament_income$income == min(tournament_income$income)), ]$income)` dochodu.
+
+***
+## Turniej w którą grę był najbardziej dochodowy?
+
+Gra turniejowa, której średni dochód jest największy, będzie najbardziej dochodowa. Posiadając informacje o dochodzie firmy w każdym turnieju należy pogrupować gry ze względu na ich tytuły. Na podstawie średniej w podgrupach należy wybierać planszówkę, która charakteryzuje się największym średnim dochodem.
+
+```{r, echo = F}
+total_income_group_df <- tournament_income %>% 
+  group_by(game_title) %>% 
+  mutate(total_game_income = sum(income)) %>% 
+  distinct(game_title, total_game_income)
+
+sum_game <- table(tournament_income$game_title)
+
+merged_df <- merge(total_income_group_df, as.data.frame(sum_game), by.x = "game_title", by.y = "Var1", all.x = TRUE) %>%
+  mutate(srednia = total_game_income/Freq) %>%
+  arrange(desc(srednia))
+```
+
+```{r supi, echo=F}
+#ggplot(tournament_income, aes(x=as.factor(tournament_date), y=as.factor(income))) + geom_col(aes(fill = game_title)) 
+popular_plot <- plot_ly(data = merged_df, x = ~game_title, y = ~srednia, type = 'bar', color = ~game_title, hovertemplate = "Gra: %{x}:<br> Średni dochód: %{y}", showlegend=F)
+popular_plot <- layout(popular_plot, xaxis = list(tickangle = 90, title="Gra"), yaxis = list(range = c(0, max(merged_df$srednia)+5), title = "Średnia"), title = "Średni dochód dla każdej gry turniejowej")
+popular_plot
+```
+
+Na podstawie otrzymanych wyników warto w przyszłości organizować więcej turniejów w grę `r merged_df[which(merged_df$srednia == max(merged_df$srednia)), ]$game_title`. Planszówka ta charakteryzuje się największą dochodowością dla firmy, aby zachęcić jeszcze większą ilość graczy można większyć kwotę, która jest przeznaczana na organizację rozgrywek. Natomiast w przyszłości należy organizować mniej turniejów w  `r merged_df[which(merged_df$srednia == min(merged_df$srednia)), ]$game_title`, ponieważ dochody osiągane przez firmę w tym przypadku są najmniejsze.
+
+***
+# Ranking na pracownika miesiąca
+
+Pracownikiem miesiąca zostaje zatrudniony, który w ciągu danego miesiąca sprzedał lub wypożyczył najwięcej gier spośród wszystkich pracowników, nie uwzględnia się przy tym ilości obsłużonych klientów. Aby znaleźć takiego pracownika należy pogrupować sprzedane i wypożyczone gry ze względu na osobę, która realizowała zamówienie klienta. Dodatkowo grupując po miesiącu i roku uzyskuje się ilość sprzedanych i wypożyczonych planszówek w danym okresie czasu. 
+
+```{r, echo = F}
+rental_info = 'SELECT employee_id, COUNT(*) AS "rented_games", first_name, last_name, EXTRACT(YEAR FROM rental_date) AS year, EXTRACT(MONTH FROM rental_date) AS month
+FROM employee
+LEFT JOIN rental USING (employee_id)
+LEFT JOIN rental_product_rel USING (rental_id)
+LEFT JOIN product USING (product_id)
+GROUP BY year, month, employee_id
+ORDER BY rented_games DESC
+'
+
+purchase_info = 'SELECT employee_id, COUNT(*) AS "sold_games", first_name, last_name, EXTRACT(YEAR FROM purchase_date) AS year, EXTRACT(MONTH FROM purchase_date) AS month
+FROM employee
+LEFT JOIN purchase USING(employee_id)
+LEFT JOIN product USING(purchase_id)
+GROUP BY year, month, employee_id
+ORDER BY sold_games DESC
+'
+
+rental_df <- dbGetQuery(con_mariadb, rental_info)
+purchase_df <- dbGetQuery(con_mariadb, purchase_info)
+
+rental_df$date <- paste(rental_df$year, rental_df$month, sep="-")
+rental_df$full_name <- paste(rental_df$first_name, rental_df$last_name)
+purchase_df$date <- paste(purchase_df$year, purchase_df$month, sep="-")
+purchase_df$full_name <- paste(purchase_df$first_name, purchase_df$last_name)
+
+rental_df <- rental_df %>% select(employee_id, rented_games, full_name, date, month, year)
+purchase_df <- purchase_df %>% select(employee_id, sold_games, full_name, date, month, year)
+```
+
+
+```{r, echo = F}
+best_employee <-  rental_df %>% 
+  full_join(purchase_df, by = c("employee_id", "date", "full_name", "month", "year"))
+
+best_employee[is.na(best_employee)] <- 0
+best_employee <- best_employee %>%
+  mutate(total_games = sold_games + rented_games) %>%
+  group_by(date) %>%
+  filter(total_games == max(total_games)) %>% 
+  arrange(year, month)
+
+best_employee$date <- as.factor(best_employee$date)
+best_employee$employee_id <- as.factor(best_employee$employee_id)
+
+best_employee$index <- seq_len(nrow(best_employee))
+```
+
+
+```{r, echo = F}
+employee_plot <- plot_ly(data = best_employee, x = ~index, y = ~total_games, type = 'bar', color = ~full_name, customdata = ~sold_games, hovertemplate = paste("Gry sprzedane: %{customdata}:<br> Gry wypożyczone:", best_employee$rented_games, "<br>Suma: %{y}"))
+employee_plot <- layout(employee_plot, xaxis = list(tickvals = ~index, ticktext = ~as.character(best_employee$date), tickangle = 90, title = "Data"), yaxis = list(title = "Ilość gier"), title = "Ilość gier sprzedanych i wypożyczonych przez\nnajlepszych pracowników w każdym miesiącu")
+employee_plot
+```
+Najczęściej pracownikiem miesiąca zostaje `r as.factor(names(table(best_employee$full_name))[which.max(table(best_employee$full_name))])`. Ten tytuł otrzymał `r as.factor(max(table(best_employee$full_name)))` razy. 
+
+***
+
+
+```{r, echo = F}
+purchase_question3 <- 'SELECT game_id, game_title, SUM(price) AS "przychod_sprzedaz", COUNT(*) AS "game_num", SUM(price)*0.4 AS "dochod_sprzedaz"
+FROM purchase
+LEFT JOIN product USING (purchase_id)
+LEFT JOIN game USING (game_id)
+GROUP BY game_id
+ORDER BY dochod_sprzedaz DESC'
+
+rental_question3 <- 'SELECT product_id, game_id, game_title, COUNT(*) AS "rent_num", rental_price, price
+FROM rental
+JOIN rental_product_rel USING (rental_id)
+LEFT JOIN product USING (product_id)
+LEFT JOIN game USING(game_id)
+GROUP BY product_id'
+
+purchase_df3 <- dbGetQuery(con_mariadb, purchase_question3)
+rental_df3 <- dbGetQuery(con_mariadb, rental_question3)
+
+```
+
+# Najbardziej dochodowe gry
+
+```{r, echo = F}
+purchase_question3 <- 'SELECT game_id, game_title, SUM(price) AS "przychod_sprzedaz", COUNT(*) AS "game_num", SUM(price)*0.4 AS "dochod_sprzedaz"
+FROM purchase
+LEFT JOIN product USING (purchase_id)
+LEFT JOIN game USING (game_id)
+GROUP BY game_id
+ORDER BY dochod_sprzedaz DESC'
+
+rental_question3 <- 'SELECT product_id, game_id, game_title, COUNT(*) AS "rent_num", rental_price, price
+FROM rental
+JOIN rental_product_rel USING (rental_id)
+LEFT JOIN product USING (product_id)
+LEFT JOIN game USING(game_id)
+GROUP BY product_id'
+
+purchase_df3 <- dbGetQuery(con_mariadb, purchase_question3)
+rental_df3 <- dbGetQuery(con_mariadb, rental_question3)
+
+```
+
+## 10 gier, które przynoszą największy dochód ze sprzedaży
+
+Dochód jaki uzyska firma na sprzedaży gier to przychód pomniejszony o koszt zakupu planszówek. Aby dana gra trafiła do sklepu to należy zakupić ją po cenie hurtowej, która wynosi 60% ceny po jakiej jest ona sprzedawana w wypożyczalni. Na każdej sprzedaży gry firma generuje zyski. Aby otrzymać informację o najbardziej dochodowych grach należy zliczyć ilość sprzedanych egzemplarzy każdego rodzaju planszówki i obliczyć uzyskane dochody.
+
+```{r, echo = F}
+purchase_df_result <- purchase_df3 %>% 
+  arrange(desc(dochod_sprzedaz)) %>%
+  slice_head(n = 10)
+
+purchase_df_result$index <- seq_len(nrow(purchase_df_result))
+
+```
+
+```{r, echo= F}
+income_purchase <- plot_ly(data = purchase_df_result, x = ~index, y = ~dochod_sprzedaz, type = 'bar',color = ~game_title, colors = "Paired",  hovertemplate = paste("Gra:", purchase_df_result$game_title,"<br>Przychód: ", purchase_df_result$przychod_sprzedaz, "<br>Dochód: %{y}<br>Ilość sprzedanych egzemplarzy: ", purchase_df_result$game_num))
+income_purchase <- layout(income_purchase, xaxis = list(title="Gra", tickvals = "", ticktext = ""), yaxis = list(range = c(0, max(purchase_df_result$dochod_sprzedaz)+5), title = "Dochód"), title = "10 najbardziej dochodowych gier ze względu na sprzedaż")
+income_purchase
+```
+Najbardziej dochodową grą, która była kupowana w wypożyczalni jest `r as.factor(purchase_df_result[1,]$game_title)`. Wyprzedano aż `r as.factor(purchase_df_result[1,]$game_num)` egzemplarzy tej planszówki.
+
+***
+## 10 gier, które przynoszą największy dochód z wypożyczeń
+
+Aby móc wypożyczać gry należy je uprzednio zakupić, w hurtowni kosztują one 60% ceny po jakiej gry są sprzedawane w wypożyczalni. Przychód pomniejszony o koszt zakupu planszówek jest dochodem. Gry, które generują największe dochody wybrane zostaną na podstawie ilości wypożyczeń różnych egzemplarzy każdej planszówki, spośród nich zostało wybrane dziesięć, z których dochód jest największy.
+
+```{r, echo = F}
+rental_df3_aux <- rental_df3 %>% 
+  mutate(total = rent_num*rental_price) %>% 
+  group_by(game_title) %>% 
+  summarize(przychod_wypozyczenia = sum(total))
+
+game_wholesale_price <- rental_df3 %>% distinct(game_title, wholesale_price = 0.6*price)
+
+tab_aux <- table(rental_df3$game_title)
+
+rental_df3_result <- merge(rental_df3_aux, as.data.frame(tab_aux), by.x = "game_title", by.y = "Var1", all.x = TRUE) %>%
+  left_join(game_wholesale_price, by = "game_title") %>%
+  mutate(buy_rental_games = wholesale_price * Freq) %>%
+  mutate(total_income = przychod_wypozyczenia - buy_rental_games) %>%
+  arrange(desc(total_income)) %>%
+  slice_head(n = 10)
+
+rental_df3_result$index <- seq_len(nrow(rental_df3_result))
+```
+
+```{r, echo = F}
+income_rental <- plot_ly(data = rental_df3_result, x = ~index, y = ~total_income, type = 'bar',color = ~game_title, colors = "Paired",  hovertemplate = paste("Gra:", rental_df3_result$game_title,"<br>Przychód: ", rental_df3_result$przychod_wypozyczenia, "<br>Dochód: %{y}<br>Ilość egzemplarzy\nw wypożyczalni: ", rental_df3_result$Freq))
+income_rental <- layout(income_rental, xaxis = list(tickangle = 90, title="Gra", tickvals = "", ticktext = ""), yaxis = list(title = "Dochód"), title = "10 najbardziej dochodowych gier ze względu na wypożyczenia")
+income_rental
+```
+
+Najwięcej dochodu wynikającego z wypożyczeń uzyskała gra `r as.factor(rental_df3_result[1,]$game_title)`. Wyniósł on `r as.factor(rental_df3_result[1,]$total_income)` W wypożyczalni jest `r as.factor(rental_df3_result[1,]$Freq)` egzemplarzy tej planszówki.
+
+***
+# Zestawienie miesięczne przychodów
+
+Na przychody firmy składają się wypożeczenia, sprzedaż i kara za nieoddanie gry w wyznaczonym terminie. Wartości poszczególnych składowych różnią się między sobą w danych miesiącach. Przy obliczaniu przychodu nie uwzględnia się kosztów prowadzenia działalności.
+
+```{r, echo = F}
+month_purchase <- 'SELECT EXTRACT(YEAR FROM purchase_date) AS year, EXTRACT(MONTH FROM purchase_date) AS month, SUM(price) AS "purchase"
+FROM purchase
+LEFT JOIN product USING (purchase_id)
+LEFT JOIN game USING (game_id)
+GROUP BY year, month;'
+
+month_rental <- 'SELECT EXTRACT(YEAR FROM rental_date) AS year, EXTRACT(MONTH FROM rental_date) AS month, SUM(rental_price) AS "rental"
+FROM rental
+JOIN rental_product_rel USING (rental_id)
+LEFT JOIN product USING (product_id)
+LEFT JOIN game USING (game_id)
+GROUP BY year, month
+'
+
+month_penalty <- 'SELECT EXTRACT(YEAR FROM return_date_actual) AS year, EXTRACT(MONTH FROM return_date_actual) AS month, SUM(kara) AS "penalty"
+FROM  (
+    SELECT return_date_actual, return_date_expected, rental_date, (rental_price*DATEDIFF(return_date_actual, return_date_expected)*0.5) AS "kara"
+    FROM rental
+    JOIN rental_product_rel USING (rental_id)
+    LEFT JOIN product USING (product_id)
+    LEFT JOIN game USING (game_id)
+    WHERE DATEDIFF(return_date_actual, return_date_expected) > 0
+) AS t
+GROUP BY year, month;
+'
+
+month_penalty_df <- dbGetQuery(con_mariadb, month_penalty)
+month_purchase_df <- dbGetQuery(con_mariadb, month_purchase)
+month_rental_df <- dbGetQuery(con_mariadb, month_rental)
+```
+
+
+```{r, echo=F}
+month_info <-  month_purchase_df %>% 
+  full_join(month_penalty_df, by = c("month", "year")) %>%
+  full_join(month_rental_df, by = c("month", "year")) 
+
+month_info[is.na(month_info)] <- 0
+
+month_info <- month_info %>%
+  mutate(total = purchase + penalty + rental)
+
+month_info$index <- seq_len(nrow(month_info))
+
+month_info$date <- paste(month_info$year, month_info$month, sep="-")
+```
+
+```{r, echo = F}
+month_income_plot <- plot_ly(data = month_info)
+  
+month_income_plot <- month_income_plot %>%
+  add_trace(x = ~index, y = ~purchase, name = "Sprzedaże", type = "bar", hovertemplate = paste("Sprzedaż: %{y}<br>Przychód: ", month_info$total)) %>%
+  add_trace(x = ~index, y = ~rental, name = "Wypozyczenia", type = "bar", hovertemplate = paste("Wypożeczenie: %{y}<br>Przychód: ", month_info$total))%>%
+  add_trace(x = ~index, y = ~penalty, name = "Kary", type = "bar", hovertemplate = paste("Kara: %{y}<br>Przychód: ", month_info$total))
+
+month_income_plot <- month_income_plot %>% layout(barmode = "stack", xaxis = list(tickvals = ~index, ticktext = ~as.character(month_info$date), tickangle = 90, title="Data"), yaxis = list(title = "Kwota", range = c(0, max(month_info$total)+10)), title = "Przychody w poszczególnych miesiącach")
+month_income_plot
+```
+
+Największy przychód firmy został wygenerowany w `r month_info[which(month_info$total == max(month_info$total)), ]$month`.`r month_info[which(month_info$total == max(month_info$total)), ]$year` i wyniósł `r as.factor(month_info[which(month_info$total == max(month_info$total)), ]$total)`.
+
+
+```{r, echo = F}
+purchase_monthly <- plot_ly(data = month_info)
+  
+purchase_monthly <- purchase_monthly %>%
+  add_trace(x = ~index, y = ~purchase, name = "Sprzedaże", type = "bar", hovertemplate = "Sprzedaż: %{y}", marker = list(color = "#1f77b4"), showlegend = F)
+
+purchase_monthly <- purchase_monthly %>% layout(xaxis = list(tickvals = ~index, ticktext = ~as.character(month_info$date), tickangle = 90, title="Data"), yaxis = list(title = "Kwota", range = c(0, max(month_info$purchase)+10)), title = "Przychód ze sprzedaży w poszczególnych miesiącach")
+purchase_monthly
+```
+
+Największe przychody ze sprzedaży gier zostały wygenerowane `r month_info[which(month_info$purchase == max(month_info$purchase)), ]$month`.`r month_info[which(month_info$purchase == max(month_info$purchase)), ]$year` i wyniosły `r as.factor(month_info[which(month_info$purchase == max(month_info$purchase)), ]$purchase)`.
+
+
+```{r, echo = F}
+rental_monthly <- plot_ly(data = month_info)
+  
+rental_monthly <- rental_monthly %>%
+  add_trace(x = ~index, y = ~rental, name = "Wypożyczenia", type = "bar", hovertemplate = "Wypożyczenie: %{y}", marker = list(color = "#ff7f0e"), showlegend = F)
+
+rental_monthly <- rental_monthly %>% layout(xaxis = list(tickvals = ~index, ticktext = ~as.character(month_info$date), tickangle = 90, title="Data"), yaxis = list(title = "Kwota", range = c(0, max(month_info$rental)+10)), title = "Przychód z wypożyczeń w poszczególnych miesiącach")
+rental_monthly
+```
+Największe przychody z wypożyczania gier zostały wygenerowane `r month_info[which(month_info$rental == max(month_info$rental)), ]$month`.`r month_info[which(month_info$rental == max(month_info$rental)), ]$year` i wyniosły `r as.factor(month_info[which(month_info$rental == max(month_info$rental)), ]$rental)`.
+
+
+```{r, echo = F}
+penalty_monthly <- plot_ly(data = month_info)
+  
+penalty_monthly <- penalty_monthly %>%
+  add_trace(x = ~index, y = ~penalty, name = "Kary", type = "bar", hovertemplate = "Kara: %{y}", marker = list(color = "#2ca02c"), showlegend = F)
+
+penalty_monthly <- penalty_monthly %>% layout(xaxis = list(tickvals = ~index, ticktext = ~as.character(month_info$date), tickangle = 90, title="Data"), yaxis = list(title = "Kwota", range = c(0, max(month_info$penalty)+10)), title = "Przychód z kar w poszczególnych miesiącach")
+penalty_monthly
+```
+Klienci, którzy nie oddadzą wypożyczonej planszówki w terminie muszą liczyć się z dodatkowymi kosztami. Przetrzymywanie gry o każdy dzień skutkuje koniecznością dopłaty 50% ceny wypożyczenia. Największa kwota, która została uzyskana przez przetrzymywanie gier przez klientów została wygenerowana `r month_info[which(month_info$penalty == max(month_info$penalty)), ]$month`.`r month_info[which(month_info$penalty == max(month_info$penalty)), ]$year` i wyniosła `r as.factor(month_info[which(month_info$penalty == max(month_info$penalty)), ]$penalty)`.
