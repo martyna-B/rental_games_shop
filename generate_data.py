@@ -15,7 +15,9 @@ addresses = pd.read_excel("data/addresses.xlsx", engine = "openpyxl")
 games = games.rename(columns = {"Rent_price": "Rental_price"}).drop_duplicates("Game_ID")
 
 def rand_email(name, surname):
-    return (unidecode(random.choice([name, name[0]])) + "." + unidecode(surname) + random.choice(["", str(np.random.geometric(0.5))]) + random.choice(["@wp.pl", "@gmail.com", "@onet.pl"])).lower()
+    return (unidecode(random.choice([name, name[0]])) + "." + unidecode(surname) + 
+            random.choice(["", str(np.random.geometric(0.5))]) + 
+            random.choice(["@wp.pl", "@gmail.com", "@onet.pl"])).lower()
 
 def rand_females(n):
     names = random.choices(female_names["IMIĘ PIERWSZE"], weights = female_names["LICZBA WYSTĄPIEŃ"], k = n)
@@ -36,7 +38,8 @@ def rand_people(n):
     return people
 
 def rand_phone_numbers(n):
-    return ["+48" + random.choice(["5", "6", "7", "8"]) + "".join([str(random.randint(0, 9)) for _ in range(8)]) for I in range(n)]
+    return ["+48" + random.choice(["5", "6", "7", "8"]) + str(random.randint(10**7, 10**8-1)) for I in range(n)]
+
 def rand_dates_and_salaries(n, first_date):
     result = []
     for i in range(n):
@@ -51,7 +54,7 @@ def generate_customers(n, addresses_number):
     df["Customer_ID"] = range(1, n+1)
     df[["First_name", "Last_name", "Email"]] = pd.Series(rand_people(n)).str.split("*", expand = True)
     df["Phone_number"] = rand_phone_numbers(n)
-    df["Address_ID"] = [random.randint(1, addresses_number) for _ in range(n)]
+    df["Address_ID"] = random.sample(range(1, addresses_number + 1), n)
     df = df.set_index("Customer_ID")
     return df
 
@@ -60,7 +63,7 @@ def generate_employees(n, addresses_number, first_date):
     df["Employee_ID"] = range(1, n+1)
     df[["First_name", "Last_name", "Email"]] = pd.Series(rand_people(n)).str.split("*", expand = True)
     df["Phone_number"] = rand_phone_numbers(n)
-    df["Address_ID"] = [random.randint(1, addresses_number) for _ in range(n)]
+    df["Address_ID"] = random.sample(range(1, addresses_number + 1), n)
     df[["Employment_date", "Dismissal_date", "Salary"]] = rand_dates_and_salaries(n, first_date)
     df = df.set_index("Employee_ID")
     return df
