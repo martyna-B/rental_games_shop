@@ -245,7 +245,7 @@ income_rental <- layout(income_rental, xaxis = list(tickangle = 90, title="Gra",
 income_rental
 ```
 
-Najwięcej dochodu wynikającego z wypożyczeń uzyskała gra `r as.factor(rental_df3_result[1,]$game_title)`. Wyniósł on `r as.factor(rental_df3_result[1,]$total_income)` W wypożyczalni jest `r as.factor(rental_df3_result[1,]$Freq)` egzemplarzy tej planszówki.
+Najwięcej dochodu wynikającego z wypożyczeń uzyskała gra `r as.factor(rental_df3_result[1,]$game_title)`. Wyniósł on `r as.factor(rental_df3_result[1,]$total_income)`, wypożyczalni jest `r as.factor(rental_df3_result[1,]$Freq)` egzemplarzy tej planszówki.
 
 ***
 # Zestawienie miesięczne przychodów
