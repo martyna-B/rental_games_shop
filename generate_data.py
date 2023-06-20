@@ -36,8 +36,7 @@ def rand_people(n):
     return people
 
 def rand_phone_numbers(n):
-    return ["+48" + random.choice(["5", "6", "7", "8"]) + str(random.randint(10**7, 10**8-1)) for I in range(n)]
-
+    return ["+48" + random.choice(["5", "6", "7", "8"]) + "".join([str(random.randint(0, 9)) for _ in range(8)]) for I in range(n)]
 def rand_dates_and_salaries(n, first_date):
     result = []
     for i in range(n):
